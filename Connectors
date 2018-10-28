@@ -1,0 +1,50 @@
+{
+        "name": "jdbc_source_mysql_foobar_01",
+        "config": {
+                "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                "key.converter": "io.confluent.connect.avro.AvroConverter",
+                "key.converter.schema.registry.url": "http://localhost:8081",
+                "value.converter": "io.confluent.connect.avro.AvroConverter",
+                "value.converter.schema.registry.url": "http://localhost:8081",
+                "connection.url": "jdbc:mysql://192.168.225.1:3306/demo?user=root&password=",
+                "table.whitelist": "foobar",
+                "mode": "timestamp",
+                "timestamp.column.name": "update_ts",
+                "validate.non.null": "false",
+                "topic.prefix": "mysql-"
+        }
+}
+
+
+mongoDB sink - 
+{
+        "name": "jdbc_sink_mongo_foobar_01",
+                "config": {
+                        "key.converter":"io.confluent.connect.avro.AvroConverter",
+                        "key.converter.schema.registry.url":"http://localhost:8081",
+                        "value.converter":"io.confluent.connect.avro.AvroConverter",
+                        "value.converter.schema.registry.url":"http://localhost:8081",
+                        "connector.class": "at.grahsl.kafka.connect.mongodb.MongoDbSinkConnector",
+                        "topics": "mysql-foobar",
+                        "mongodb.connection.uri": "mongodb://192.168.225.1:27017/kafkaconnect?w=1&journal=true",
+                        "mongodb.collection": "mongosink"
+                }
+}
+
+mysql> create table foobar (c1 int, c2 varchar(255),create_ts timestamp DEFAULT CURRENT_TIMESTAMP , update_ts timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP );
+mysql> insert into foobar (c1,c2) values(3,'abc');
+
+varun@ubuntu:~/myTest$ confluent status connectors
+This CLI is intended for development only, not for production
+https://docs.confluent.io/current/cli/index.html
+
+[
+  "jdbc_sink_mongo_foobar_01",
+  "jdbc_source_mysql_foobar_01"
+]
+
+
+MongoDB Enterprise > db.mongosink.find();
+{ "_id" : ObjectId("5bd554d01ec13c37f78b7351"), "c1" : 1, "c2" : "foo", "create_ts" : ISODate("2018-10-27T09:08:35Z"), "update_ts" : ISODate("2018-10-27T09:08:35Z") }
+{ "_id" : ObjectId("5bd554d01ec13c37f78b7352"), "c1" : 2, "c2" : "bcd", "create_ts" : ISODate("2018-10-27T14:10:19Z"), "update_ts" : ISODate("2018-10-27T14:10:19Z") }
+{ "_id" : ObjectId("5bd554d01ec13c37f78b7353"), "c1" : 3, "c2" : "abc", "create_ts" : ISODate("2018-10-27T18:19:19Z"), "update_ts" : ISODate("2018-10-27T18:19:19Z") }
